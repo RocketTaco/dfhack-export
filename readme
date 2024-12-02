@@ -70,3 +70,72 @@ Exporting to Minecraft:
 		- Enter //paste
 		- Wait a very long time for Minecraft to stop freaking out
 		- Enjoy playing with your new DF toy set
+
+Enhancing the format
+	The mapping of Dwarf Fortress tile types to Minecraft blocks is done in the file translate.lua.
+	I've tried to keep the structure sane at the cost of a bit of performance so that it can be
+	edited and expanded easily. There are three major components to a DF tile in use:
+		Shape is the physical structure
+		Material is what it's made out of
+		Flags store information about (among other things) liquids on the tile
+	The mapper first checks the shape against the shape_map table. If it finds an exact match, that
+	block is used. If it finds a function, it calls that function with the coordinates of the tile.
+	This is used to check flags or look at adjacent tiles when more complex determinations are
+	needed. If the mapper finds a table, it repeats the process with that table but using the
+	tile material as the index instead. It does not know what to do with a third tier of table so
+	don't give it one. This should be adequate to cover pretty much any sane 1:1 mapping.
+	
+	To get a list of the shape and material types the game is using, you can run the export/dump
+	command, which will make a complete listing of each to their internal names in out.txt in your
+	DF base directory. Coordinates can be given for a single tile (ex. -x 45 -y 19 -z 130) and this
+	will print its tile attributes and flags to the DFHack console so you can inspect tiles to find
+	out what they are.
+	
+	Minecraft block names can be a bit complex. The fastest way is to just export a schematic with
+	the block you want and get it from the file. Use the //wand command in WorldEdit to get a
+	selection tool (left and right click on blocks to select opposite corners) then //copy and
+	//schem save <filename>. It will be in <Minecraft>\config\worldedit\schematics. DECOMPRESS IT
+	with your gzip tool. At this point you have two options. You can use a Lua interpreter to
+	generate a readable/mostly reexecutable (empty strings = bad and NBT files open with them) Lua
+	structure of the code from the export script directory:
+	
+		mc = require("mooncraft")
+		util = require("util")
+		
+		local file = io.open("myschematic.schem", "rb")
+		local data = file:read("a")
+		file:close()
+		
+		data = mc.readNBT(data)
+		
+		--Print to console. -1 prints full depth of table heirarchy.
+		util.print(data, -1)
+		
+		--Write to a .lua file
+		file = io.open("myschematic.lua", "w")
+		file:write(util.string.tostring(data, -1))
+		file:close()
+		
+	The other, faster but less legible option is to open the file with a hex editor and read the
+	tags directly:
+		
+		00000110  00 01 02 00 06 4C 65 6E 67 74 68 00 01 0B 00 06  .....Length.....
+		00000120  4F 66 66 73 65 74 00 00 00 03 FF FF FF FF 00 00  Offset....ÿÿÿÿ..
+		00000130  00 00 FF FF FF FE 0A 00 06 42 6C 6F 63 6B 73 0A  ..ÿÿÿþ...Blocks.
+		00000140  00 07 50 61 6C 65 74 74 65 03 00 19 6D 69 6E 65  ..Palette...mine
+		00000150  63 72 61 66 74 3A 6F 61 6B 5F 6C 6F 67 5B 61 78  craft:oak_log[ax
+		00000160  69 73 3D 79 5D 00 00 00 00 03 00 42 6D 69 6E 65  is=y]......Bmine
+		00000170  63 72 61 66 74 3A 6F 61 6B 5F 6C 65 61 76 65 73  craft:oak_leaves
+		00000180  5B 64 69 73 74 61 6E 63 65 3D 31 2C 70 65 72 73  [distance=1,pers
+		00000190  69 73 74 65 6E 74 3D 74 72 75 65 2C 77 61 74 65  istent=true,wate
+		000001A0  72 6C 6F 67 67 65 64 3D 66 61 6C 73 65 5D 00 00  rlogged=false]..
+		000001B0  00 01 03 00 22 6D 69 6E 65 63 72 61 66 74 3A 67  ...."minecraft:g
+		000001C0  72 61 73 73 5F 62 6C 6F 63 6B 5B 73 6E 6F 77 79  rass_block[snowy
+		000001D0  3D 66 61 6C 73 65 5D 00 00 00 02 00 07 00 04 44  =false]........D
+		000001E0  61 74 61 00 00 00 03 00 01 02 09 00 0D 42 6C 6F  ata..........Blo
+		000001F0  63 6B 45 6E 74 69 74 69 65 73 0A 00 00 00 00 00  ckEntities......
+
+	The Palette tag will appear immediately before a list of block type tags present in the file.
+	These will all be of the format minecraft:<block name>[<bunch of properties>] and are guaranteed
+	to have	unprintable characters between them, so it's not terribly hard to pick out what you're
+	looking	for.

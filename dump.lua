@@ -1,4 +1,5 @@
 local dfhack = require("dfhack")
+local argparse = require("argparse")
 local util = dofile("hack/scripts/export/util.lua")
 
 local function dumpTileTypes(filename)
@@ -68,7 +69,18 @@ local function buildMatClassDict()
 	return mat_class_dict
 end
 
-print(_VERSION)
+local args = {...}
+
+local parsed = argparse.processArgs(args, valid_args)
+
+local x = tonumber(parsed["x"])
+local y = tonumber(parsed["y"])
+local z = tonumber(parsed["z"])
+
+if x and y and z then
+	util.print(df.tiletype.attrs[dfhack.maps.getTileType(x,y,z)])
+	util.print(dfhack.maps.getTileFlags(x,y,z))
+end
 
 file = io.open("out.txt", "w")
 file:write("shape_dict = " .. util.string.tostring(buildShapeDict()) .. "\n")

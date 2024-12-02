@@ -85,7 +85,6 @@ function translate.getMcBlock(x,y,z)
 	if type(resp) == "table" then
 		resp = resp[attrs.material]
 		if type(resp) == "string" then return resp end
-		if type(resp) == "string" then return resp end
 		if type(resp) == "function" then return resp(x,y,z) end
 	end
 	return "minecraft:air"
