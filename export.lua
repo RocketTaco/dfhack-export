@@ -34,49 +34,49 @@ end
 
 --Write tile data to bitmap image format
 local function writeBitmap(bounds, filename)
-	local file = io.open(filename, "w")
-	if not file then
-		error("Could not open file: " .. file)
-	end
-	
-	--TODO: tile_data -> pixels
-	
-	local y_size = #pixels
-	local x_size = #pixels[1]
+	local y_size = bounds.ymax - bounds.ymin + 1
+	local x_size = bounds.xmax - bounds.xmin + 1
 	local row_pad = 4 - ((3 * x_size) % 4) --padding to get rows to 4-byte multiple
 	if 4 == row_pad then row_pad = 0 end
 	
 	local file_size = 54 + (y_size * ((3 * x_size) + row_pad)) --Bitmap header is 54 bytes
-	row_pad = "" .. string.rep("\xFF", rowPad)
+	row_pad = "" .. string.rep("\xFF", row_pad)
 	
-	local bmp = {
-		"BM" ..               --file signature
-		string.pack("I4", fileSize) ..
-		"\x00\x00\x00\x00" .. --reserved bytes
-		"\x36\x00\x00\x00" .. --pixel array offset
-		"\x28\x00\x00\x00" .. --DIB header size
-		string.pack("I4", x_size) ..
-		string.pack("I4", y_size) ..
-		"\x01\x00" ..         --single color plane
-		"\x18\x00" ..         --24 bpp
-		"\x00\x00\x00\x00" .. --RGB, no compression
-		"\x00\x00\x00\x00" .. --no data size specified
-		"\xC4\x0E\x00\x00" .. --3780 pix/m horizontal
-		"\xC4\x0E\x00\x00" .. --3780 pix/m vertical
-		"\x00\x00\x00\x00" .. --no color palette
-		"\x00\x00\x00\x00"    --all colors significant
-	}
-	
-	--TODO this might be reducible by table.concat if pixel types are already strings
-	for _,row in ipairs(pixels) do
-		for _,pix in ipairs(row) do
-			table.insert(bmp, pix)
+	for z = bounds.zmin, bounds.zmax do
+		local file = io.open(string.format("L%d_%s", z, filename), "w")
+		if not file then
+			error("Could not open file: " .. file)
 		end
-		table.insert(bmp, row_pad)
+		
+		local bmp = {
+			"BM" ..               --file signature
+			string.pack("I4", file_size) ..
+			"\x00\x00\x00\x00" .. --reserved bytes
+			"\x36\x00\x00\x00" .. --pixel array offset
+			"\x28\x00\x00\x00" .. --DIB header size
+			string.pack("I4", x_size) ..
+			string.pack("I4", y_size) ..
+			"\x01\x00" ..         --single color plane
+			"\x18\x00" ..         --24 bpp
+			"\x00\x00\x00\x00" .. --RGB, no compression
+			"\x00\x00\x00\x00" .. --no data size specified
+			"\xC4\x0E\x00\x00" .. --3780 pix/m horizontal
+			"\xC4\x0E\x00\x00" .. --3780 pix/m vertical
+			"\x00\x00\x00\x00" .. --no color palette
+			"\x00\x00\x00\x00"    --all colors significant
+		}
+	
+		for y = bounds.ymax, bounds.ymin, -1 do
+			for x = bounds.xmin, bounds.xmax do
+				table.insert(bmp, trans.getPixel(x,y,z))
+			end
+			table.insert(bmp, row_pad)
+		end
+		
+		file:write(table.concat(bmp))
+		file:close()
 	end
 	
-	file:write(table.concat(bmp))
-	file:close()
 end
 
 --[[
