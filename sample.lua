@@ -1,7 +1,7 @@
 return {
 	dict = {
-		[0] = "minecraft:air",
-		[1] = "minecraft:stone",
+		["minecraft:air"]   = 0,
+		["minecraft:stone"] = 1,
 	},
 	blocks = {
 		{ --Layer 1

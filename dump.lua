@@ -1,5 +1,4 @@
 local dfhack = require("dfhack")
-local argparse = require("argparse")
 local util = dofile("hack/scripts/export/util.lua")
 
 local material_groups = {
@@ -54,7 +53,7 @@ local shape_groups = {
 	ENDLESS_PIT = df.tiletype_shape.ENDLESS_PIT,
 }
 
-function dumpTileTypes(filename)
+local function dumpTileTypes(filename)
 	local file = io.open(filename, "w")
 	
 	local first = df.tiletype._first_item
@@ -69,7 +68,7 @@ function dumpTileTypes(filename)
 	file:close()
 end
 
-function dumpTileMaterials(filename)
+local function dumpTileMaterials(filename)
 	local file = io.open(filename, "w")
 	
 	local first = df.tiletype_material._first_item
@@ -85,7 +84,7 @@ function dumpTileMaterials(filename)
 	file:close()
 end
 
-function dumpTileShapes(filename)
+local function dumpTileShapes(filename)
 	local file = io.open(filename, "w")
 	
 	local first = df.tiletype_shape._first_item
@@ -101,6 +100,26 @@ function dumpTileShapes(filename)
 	file:close()
 end
 
+local function buildShapeDict()
+	local shape_dict = {}
+	
+	for i = df.tiletype_shape._first_item, df.tiletype_shape._last_item do
+		shape_dict[df.tiletype_shape[i]] = i
+	end
+	
+	return shape_dict
+end
+
+local function buildMatClassDict()
+	local mat_class_dict = {}
+	
+	for i = df.tiletype_material._first_item, df.tiletype_material._last_item do
+		mat_class_dict[df.tiletype_material[i]] = i
+	end
+	
+	return mat_class_dict
+end
+
 print(_VERSION)
 
 file = io.open("out.txt", "w")
@@ -113,6 +132,9 @@ file:write(util.string.tostring(type(df.tiletype_shape[1])) .. "\n")
 file:write(util.string.tostring(df.tiletype_shape[1]) .. "\n")
 file:write(util.string.tostring(df.tiletype_shape.attrs[1]) .. "\n")
 file:write(util.string.tostring(df.tiletype_shape.FLOOR) .. "\n")
+
+file:write("shape_dict = " .. util.string.tostring(buildShapeDict()) .. "\n")
+file:write("mat_dict = " .. util.string.tostring(buildMatClassDict()) .. "\n")
 
 for i = df.tiletype_shape._first_item, df.tiletype_shape._last_item do
 	file:write(string.format("%d = %s\n", i, df.tiletype_shape[i]))

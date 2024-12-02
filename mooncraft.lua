@@ -1,3 +1,6 @@
+
+local util = dofile("hack/scripts/export/util.lua")
+
 local mc = {}
 
 --[[
@@ -348,7 +351,7 @@ end
 --]]
 function mc.writeWorldEditSchematic(blocks, dict)
 	local block_array = {}
-	local block_pallette = {}
+	local block_palette = {}
 
 	for _, layer in ipairs(blocks) do
 		for _, row in ipairs(layer) do
@@ -358,8 +361,8 @@ function mc.writeWorldEditSchematic(blocks, dict)
 		end
 	end
 	
-	for i, v in pairs(dict) do
-		block_pallette[v] = {tag_type = tag.Int, value = i}
+	for k, v in pairs(dict) do
+		block_palette[k] = {tag_type = tag.Int, value = v}
 	end
 
 	local schem = { tag_type = tag.Compound, value = {
@@ -386,7 +389,7 @@ function mc.writeWorldEditSchematic(blocks, dict)
 			}},
 			Blocks  = { tag_type = tag.Compound, value = {
 				Data          = { tag_type = tag.ByteArray, value = block_array },
-				Palette       = { tag_type = tag.Compound,  value = block_pallette },
+				Palette       = { tag_type = tag.Compound,  value = block_palette },
 				BlockEntities = { tag_type = tag.List,  data_type = tag.Compound, value = {} },
 				
 			}},
