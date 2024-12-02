@@ -1,0 +1,72 @@
+Required software:
+	WorldEdit for Minecraft
+	NeoForge for Minecraft (WorldEdit dependency)
+	Archive utility capable of gzip (7Zip will handle this on Windows)
+	DFHack
+
+Setup:
+	1. Ensure Minecraft (Java Edition) is installed. Launch it at least once to be sure.
+	2. Install Neoforge
+		- Download and run installer from https://neoforged.net/
+	3. Install WorldEdit
+		- Obtain latest package from https://modrinth.com/plugin/worldedit/versions?l=neoforge
+		- Place the package in <your Minecraft install>/mods
+		- The install is normally at: C:\<your user name>\AppData\Roaming\.Minecraft
+	4. Install compression utility
+		- 7Zip is suggested for Windows and can be obtained from https://7-zip.org/download.html
+	5. Install DFHack
+		- For Steam installations, DFHack can be found as a Steam application. Ensure it installs
+		  to the same drive as Dwarf Fortress and no further action should be required.
+		- For classic installations, download DFHack from https://github.com/dfhack/dfhack/releases
+		  and unpack to your Dwarf Fortress install folder.
+	6. Load the export scripts into DFHack
+		- Get the script files from https://github.com/RocketTaco/dfhack-export
+		- Place the script files in <your DF install>\hack\scripts\export
+
+
+Exporting to Minecraft:
+	1. Open the DFHack console
+	
+	2. Enter the following command:
+		export/export [AREA] --format mc --file <filename>
+		
+		AREA is an optional field limiting the exported area. You WILL want to use this because
+		if you don't it might take Minecraft a literal minute to process load. Area commands look
+		like this:
+			-z 125:170
+		Which will limit the exported area to Z-levels 125 through 170. Note that the game
+		internally runs from 0 upward while the displayed numbers are from ground level, so scroll
+		down to your lowest level and subtract that from the Z-height you want, ie if your bottom
+		is -127 level 9 becomes 9 + 127 = 136. X and Y ranges start from the top left of the screen.
+		Width of a fortress map is 48 tiles per unit of embark size, or 240x240 for a default 5x5
+		embark.
+		
+		<filename> is where your file will be exported. This will be in the Dwarf Fortress base
+		folder. DON'T give it the name of any files that are already there.
+		
+		Once you have exported once, you can press the up arrow key in the DFHack console to
+		recall recent commands. At least on the Steam version, this works between sessions.
+		
+	3. Compress the file (I will work on automating this)
+		WorldEdit likes its data files compressed. Locate the output file you made and compress it
+		to gzip format. Change the file extension to .schem
+		
+	4. Place the compressed file in <your Minecraft install>\config\worldedit\schematics
+	
+	5. Open Minecraft world
+		- Start the Minecraft launcher
+		- Select Java Edition
+		- At the top, select Installations
+		- Hover over NeoForge and press Play
+	
+	6. Create a suitable world. You probably want:
+		- Creative game mode
+		- World Type: Superflat
+		- Generate Structures: Off
+	
+	7. Load the exported world
+		- Press the ?\ key to open the console
+		- Enter //schem load <your file name>.schem
+		- Enter //paste
+		- Wait a very long time for Minecraft to stop freaking out
+		- Enjoy playing with your new DF toy set
