@@ -2,33 +2,17 @@ local dfhack = require("dfhack")
 local argparse = require("argparse")
 local util = dofile("hack/scripts/export/util.lua")
 local mc = dofile("hack/scripts/export/mooncraft.lua")
+local trans = dofile("hack/scripts/export/translate.lua")
 
 local args = {...}
 
---Construct dictionary of DF tile shapes
-local function buildShapeDict()
-	local shape_dict = {}
-	
-	for i = df.tiletype_shape._first_item, df.tiletype_shape._last_item do
-		shape_dict[df.tiletype_shape[i]] = i
+--Dump tile data as reexecutable Lua code for loading in an interpreter or other program
+local function writeLua(bounds, filename)
+	local file = io.open(filename, "w")
+	if not file then
+		error("Could not open file: " .. file)
 	end
 	
-	return shape_dict
-end
-
---Construct dictionary of DF material groups
-local function buildMatClassDict()
-	local mat_class_dict = {}
-	
-	for i = df.tiletype_material._first_item, df.tiletype_material._last_item do
-		mat_class_dict[df.tiletype_material[i]] = i
-	end
-	
-	return mat_class_dict
-end
-
---Extract tile data from DF within a specified area
-local function getTileData(bounds)
 	local tile_data = {}
 
 	for z = bounds.zmin, bounds.zmax do
@@ -43,23 +27,13 @@ local function getTileData(bounds)
 		table.insert(tile_data, new_layer)
 	end
 	
-	return tile_data
-end
-
---Dump tile data as reexecutable Lua code for loading in an interpreter or other program
-local function writeLua(tile_data, filename)
-	local file = io.open(filename, "w")
-	if not file then
-		error("Could not open file: " .. file)
-	end
-	
 	file:write(util.string.tostring(tile_data, 5) .. "\n")
 	file:close()
 	return
 end
 
 --Write tile data to bitmap image format
-local function writeBitmap(tile_data, filename)
+local function writeBitmap(bounds, filename)
 	local file = io.open(filename, "w")
 	if not file then
 		error("Could not open file: " .. file)
@@ -135,51 +109,18 @@ local function McDict()
 end
 
 --Write tile data to a WorldEdit (Minecraft) schematic
-local function writeWorldEdit(tile_data, filename)
-	local shape_dict = buildShapeDict()
-	local mat_dict = buildMatClassDict()
+local function writeWorldEdit(bounds, filename)
 	local mc_blocks = {}
 	local mc_dict = McDict()
 	
-	local attrs
-	local shape
-	local mat
-	local new_layer
-	local new_row
-	local block_type
-	for z,layer in ipairs(tile_data) do
+	--All of these are declared outside loop to avoid create penalties, we do this a LOT
+	local new_layer, new_row, attrs, block_type, lookup
+	for z = bounds.zmin, bounds.zmax do
 		new_layer = {}
-		for y,row in ipairs(layer) do
+		for y = bounds.ymin, bounds.ymax do
 			new_row = {}
-			for x,tile in ipairs(row) do
-				attrs = df.tiletype.attrs[tile]
-				shape = attrs.shape
-				mat = attrs.material
-				
-				block_type = mc_dict["minecraft:air"]
-				
-				if shape == shape_dict.WALL then
-					if mat == mat_dict.STONE then
-						block_type = mc_dict["minecraft:stone"]
-					elseif mat == mat_dict.MINERAL then
-						block_type = mc_dict["minecraft:stone"]
-					elseif mat == mat_dict.SOIL then
-						--TODO: detect type above and make this grass if appropriate
-						block_type = mc_dict["minecraft:dirt"]
-					elseif mat == mat_dict.plant then
-						block_type = mc_dict["minecraft:wheat"]
-					end
-				elseif shape == shape_dict.TRUNK_BRANCH then
-					block_type = mc_dict["minecraft:log"]
-				elseif shape == shape_dict.BRANCH then
-					block_type = mc_dict["minecraft:leaves"]
-				elseif shape == shape_dict.TWIG then
-					block_type = mc_dict["minecraft:leaves"]
-				elseif shape == shape_dict.SAPLING then
-					block_type = mc_dict["minecraft:sapling"]
-				end
-				
-				table.insert(new_row, block_type)
+			for x = bounds.xmin, bounds.xmax do
+				table.insert(new_row, mc_dict[trans.getMcBlock(x,y,z)])
 			end
 			table.insert(new_layer, new_row)
 		end
@@ -187,7 +128,6 @@ local function writeWorldEdit(tile_data, filename)
 	end
 	
 	local result = mc.writeWorldEditSchematic(mc_blocks, mc_dict)
-	
 	local count = #mc_blocks * #mc_blocks[1] * #mc_blocks[1][1]
 	
 	file = io.open(filename, "wb")
@@ -275,6 +215,6 @@ end
 export_func = formats[format]
 assert(export_func, "Unknown format: " .. format)
 
-export_func(getTileData(bounds), filename)
+export_func(bounds, filename)
 
 print(string.format("%.02f seconds elapsed\n", os.clock() - start_time))
