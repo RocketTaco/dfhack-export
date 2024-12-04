@@ -354,14 +354,21 @@ function mc.writeWorldEditSchematic(blocks, dict)
 	local block_array = {}
 	local block_palette = {}
 
+	local div
 	for _, layer in ipairs(blocks) do
 		for _, row in ipairs(layer) do
 			for _, block in ipairs(row) do
-				table.insert(block_array, block)
+				if block < 128 then
+					table.insert(block_array, block)
+				else
+					div = block // 128
+					table.insert(block_array, block - 128 * (div - 1))
+					table.insert(block_array, div)
+				end
 			end
 		end
 	end
-	
+		
 	for k, v in pairs(dict) do
 		block_palette[k] = {tag_type = tag.Int, value = v}
 	end
