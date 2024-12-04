@@ -1,6 +1,3 @@
-
-local util = dofile("hack/scripts/export/util.lua")
-
 local mc = {}
 
 --[[
@@ -169,11 +166,11 @@ tag = {
 			local val_id = string.byte(data, index)
 			local val_type = tag_lookup[val_id]
 			if not val_type then
-				error("Unknown value type in list at byte: " .. index .. ": " .. val_id)
+				error("Unknown value type in list at byte: " .. index .. ": " .. tostring(val_id))
 			end
 			
 			local length = string.unpack(">i4", data, index + 1)
-			index = index + 3
+			index = index + 5
 			
 			for i = 1, length do
 				result.value[i], index = val_type.read(data, index) 
@@ -203,7 +200,7 @@ tag = {
 			local result = {value = {}}
 			local name_len
 			local tag_type
-			while(index < #data) do
+			while(index <= #data) do
 				--Pull the leading data for the next object
 				tag_type = string.byte(data, index)
 				index = index + 1
@@ -328,8 +325,12 @@ mc.tag_lookup = tag_lookup
 	List types will also have "data_type" indicating the format the values were sourced from.
 --]]
 function mc.readNBT(raw)
-	local struct = mc.tag_lookup[string.byte(raw, 1)].read(raw, 1)
-	return struct.value[""]
+	assert(string.sub(raw, 1, 3) == "\10\0\0", "Unrecognized start of file (expected compound tag)")
+	local struct, index = tag.Compound.read(raw,4)
+	if index < #raw then
+		error("Ended prematurely at " .. #raw)
+	end
+	return struct.value
 end
 
 --[[
